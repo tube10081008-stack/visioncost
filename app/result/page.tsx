@@ -1,22 +1,14 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import { PriceBreakdownChart } from "@/components/PriceBreakdownChart";
 import { VisionCostResult } from "@/types/visionCost";
 import { evaluateDecision } from "@/lib/decision";
 
-// =======================
-// 헬퍼: base64로 인코딩된 JSON 디코딩
-// (한글 깨지지 않도록 encodeURIComponent/escape 조합 사용)
-// =======================
+// URL 쿼리로 넘어온 data(문자열)를 JSON으로 복원
 function decodeResult(encoded: string): VisionCostResult {
-  const json = decodeURIComponent(escape(atob(encoded)));
+  const json = decodeURIComponent(encoded);
   return JSON.parse(json);
 }
 
-// =======================
-// MOCK RESULT (쿼리 없을 때 예시 데이터)
-// =======================
+// 쿼리가 없거나, 파싱에 실패했을 때 사용할 기본 예시 데이터
 const MOCK_RESULT: VisionCostResult = {
   meta: {
     brandName: "MEDICUBE",
@@ -35,15 +27,16 @@ const MOCK_RESULT: VisionCostResult = {
     "이 제품은 원가 대비 마케팅/브랜드 비중이 상당히 높은 편입니다. 성능보다는 브랜드/이미지에 비용이 많이 들어간 구조로 보입니다.",
 };
 
-export default function ResultPage() {
-  const searchParams = useSearchParams();
-  const encoded = searchParams.get("data");
+type ResultPageProps = {
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
 
-  // 1) 쿼리로 결과가 넘어오면 그걸 쓰고,
-  // 2) 없으면 MOCK_RESULT 사용
+export default function ResultPage({ searchParams }: ResultPageProps) {
+  const encoded = searchParams?.data;
+
   let result: VisionCostResult = MOCK_RESULT;
 
-  if (encoded) {
+  if (typeof encoded === "string") {
     try {
       result = decodeResult(encoded);
     } catch (e) {
